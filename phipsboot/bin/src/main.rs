@@ -74,7 +74,6 @@ extern "C" fn rust_entry64(
     // make the L! page table available for translation
 
     unsafe { log::info!("Hash of memory: {:#016x?}", paging::touch_all_present_pages() )};
-    pmc::setup_pmcs();
 
     log::info!("{:?} {:?}", PhysAddr::from(apic_page), VirtAddr::from(crate::extern_symbols::link_addr_high_base() as u64));
     let virt_lapic = unsafe {
@@ -152,6 +151,7 @@ extern "C" fn rust_entry64(
 
     let mut state_machine = state_machine::StateMachine::<state_machine::StateInitialized>::new(shared_mem_communicator);
 
+    pmc::setup_pmcs();
     loop {
         state_machine = state_machine::run_state_machine(state_machine);
         pmc::read_and_print_pmcs();

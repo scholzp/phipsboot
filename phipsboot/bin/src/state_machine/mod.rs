@@ -1,10 +1,11 @@
-pub mod task_id;
-pub mod task;
 pub mod pmc;
+pub mod task;
+pub mod task_id;
 
 use crate::shared_mem_com::{SharedMemCommunicator, TeeCommand};
 use crate::state_machine::task::execute_task;
 use crate::state_machine::task_id::TaskId;
+use log::info;
 
 #[derive(Debug)]
 pub struct StateMachine<S> {
@@ -31,19 +32,19 @@ impl StateMachine<StateInitialized> {
         communicator.set_task(TaskId::Unknown);
         StateMachine {
             communicator: communicator,
-            _state: StateInitialized{},
+            _state: StateInitialized {},
         }
     }
 }
 
 impl From<StateMachine<StateInitialized>> for StateMachine<StatePolling> {
     fn from(mut m: StateMachine<StateInitialized>) -> StateMachine<StatePolling> {
-        // info!("Polling...");
+        info!("Polling...");
         m.communicator.poll();
-        // info!("Received command");
+        info!("Received command");
         StateMachine {
             communicator: m.communicator,
-            _state: StatePolling{},
+            _state: StatePolling {},
         }
     }
 }
@@ -53,7 +54,7 @@ impl From<StateMachine<StatePolling>> for StateMachine<StateLocking> {
         // pmc::setup_pmcs();
         StateMachine {
             communicator: m.communicator,
-            _state: StateLocking{},
+            _state: StateLocking {},
         }
     }
 }
@@ -65,7 +66,7 @@ impl From<StateMachine<StateLocking>> for StateMachine<StateExecuteApp> {
         execute_task(m.communicator.get_task(), &mut m.communicator);
         StateMachine {
             communicator: m.communicator,
-            _state: StateExecuteApp{},
+            _state: StateExecuteApp {},
         }
     }
 }
@@ -76,7 +77,7 @@ impl From<StateMachine<StateExecuteApp>> for StateMachine<StateUnlocking> {
         // pmc::read_and_print_pmcs();
         StateMachine {
             communicator: m.communicator,
-            _state: StateUnlocking{},
+            _state: StateUnlocking {},
         }
     }
 }
@@ -86,7 +87,7 @@ impl From<StateMachine<StateUnlocking>> for StateMachine<StateTransmitResult> {
         // Copy results
         StateMachine {
             communicator: m.communicator,
-            _state: StateTransmitResult{},
+            _state: StateTransmitResult {},
         }
     }
 }
@@ -96,12 +97,14 @@ impl From<StateMachine<StateTransmitResult>> for StateMachine<StateInitialized> 
         // Change to initialized again; wait for commands
         StateMachine {
             communicator: m.communicator,
-            _state: StateInitialized{},
+            _state: StateInitialized {},
         }
     }
 }
 
-pub fn run_state_machine(machine: StateMachine<StateInitialized>) -> StateMachine<StateInitialized> {
+pub fn run_state_machine(
+    machine: StateMachine<StateInitialized>,
+) -> StateMachine<StateInitialized> {
     let machine = StateMachine::<StatePolling>::from(machine);
     let machine = StateMachine::<StateLocking>::from(machine);
     let machine = StateMachine::<StateExecuteApp>::from(machine);

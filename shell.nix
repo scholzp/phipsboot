@@ -13,6 +13,9 @@ pkgs.mkShell rec {
     qemu
     rustup
     xorriso
+    rustfmt
+    cargo
+    rust-analyzer
 
     cargo-nextest
   ];
